@@ -19,3 +19,4 @@ bin/imgui.ini
 bin/display.*
 bin/data/*.lut
 bin/data/nprof/
+ext/libjpeg-turbo-build
