@@ -44,16 +44,25 @@ endif # end rawspeed
 
 # use rawloader
 ifeq ($(VKDT_USE_RAWINPUT),2)
-MOD_LDFLAGS=pipe/modules/i-raw/rawloader-c/target/release/librawloader.a -lm
+ifeq ($(TARGET),aarch64-linux-android)
+  RUST_TARGET=aarch64-linux-android
+  RUST_TARGET_PARAM=--target $(RUST_TARGET)
+  RUST_TARGET_DIR=target/$(RUST_TARGET)
+else
+  RUST_TARGET=
+  RUST_TARGET_PARAM=
+  RUST_TARGET_DIR=target
+endif
+MOD_LDFLAGS=pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a -lm
 ifeq ($(OS),Windows_NT)
 MOD_LDFLAGS+=-lws2_32 -lntdll -lbcrypt -lkernel32 -ladvapi32
 endif
 MOD_CFLAGS=-Ipipe/modules/i-raw/rawloader-c
-pipe/modules/i-raw/libi-raw.so: pipe/modules/i-raw/rawloader-c/target/release/librawloader.a
+pipe/modules/i-raw/libi-raw.so: pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a
 
-pipe/modules/i-raw/rawloader-c/target/release/librawloader.a: pipe/modules/i-raw/rawloader-c/lib.rs pipe/modules/i-raw/rawloader-c/Cargo.toml 
-	cd pipe/modules/i-raw/rawloader-c; cargo build --release
-	touch pipe/modules/i-raw/rawloader-c/target/release/librawloader.a
+pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a: pipe/modules/i-raw/rawloader-c/lib.rs pipe/modules/i-raw/rawloader-c/Cargo.toml
+	cd pipe/modules/i-raw/rawloader-c; cargo build $(RUST_TARGET_PARAM) --release
+	touch pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a
 endif
 
 pipe/modules/i-raw/libi-raw.so:pipe/modules/i-raw/dng_opcode_decode.c
