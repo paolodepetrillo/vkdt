@@ -53,7 +53,7 @@ else
   RUST_TARGET_DIR=target
 endif
 
-MOD_LDFLAGS=pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a
+MOD_LDFLAGS=pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a -lm
 MOD_CFLAGS=-Ipipe/modules/i-raw/rawloader-c
 pipe/modules/i-raw/libi-raw.so: pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a
 
