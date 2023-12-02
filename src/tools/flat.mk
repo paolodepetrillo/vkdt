@@ -1,6 +1,11 @@
 .PHONY:tools
 
-tools:../bin/data/spectra.lut ../bin/vkdt-mkssf ../bin/vkdt-mkclut ../bin/vkdt-lutinfo ../bin/vkdt-eval-profile
+ifneq ($(TARGET),aarch64-linux-android)
+  tools:../bin/data/spectra.lut ../bin/vkdt-mkssf ../bin/vkdt-mkclut ../bin/vkdt-lutinfo ../bin/vkdt-eval-profile
+else
+  # cannot run mkabney or macadam when cross compiling
+  tools:../bin/vkdt-mkssf ../bin/vkdt-mkclut ../bin/vkdt-lutinfo ../bin/vkdt-eval-profile
+endif
 
 ADD_CFLAGS=-Itools -Itools/shared
 ADD_LDFLAGS=-lm -ldl
