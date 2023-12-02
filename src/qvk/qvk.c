@@ -49,7 +49,9 @@ const char *vk_requested_layers[] = {
 };
 
 const char *vk_requested_instance_extensions[] = {
+#ifndef __ANDROID_NDK__
   VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#endif
   VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 };
 
@@ -83,6 +85,7 @@ get_vk_layer_list(
   QVK(vkEnumerateInstanceLayerProperties(num_layers, *ext));
 }
 
+#ifndef __ANDROID_NDK__
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 vk_debug_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -133,6 +136,7 @@ qvkDestroyDebugUtilsMessengerEXT(
   }
   return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
+#endif
 
 VkResult
 qvk_create_swapchain()
@@ -296,6 +300,7 @@ qvk_init(const char *preferred_device_name, int preferred_device_id)
     }
   }
 
+#ifndef __ANDROID_NDK__
   /* setup debug callback */
   VkDebugUtilsMessengerCreateInfoEXT dbg_create_info = {
     .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
@@ -312,6 +317,7 @@ qvk_init(const char *preferred_device_name, int preferred_device_id)
   };
 
   QVKR(qvkCreateDebugUtilsMessengerEXT(qvk.instance, &dbg_create_info, NULL, &qvk.dbg_messenger));
+#endif
 
   /* pick physical device (iterate over all but pick device 0 anyways) */
   uint32_t num_devices = 0;
@@ -624,7 +630,9 @@ qvk_cleanup()
 
   vkDestroyCommandPool (qvk.device, qvk.command_pool,     NULL);
   vkDestroyDevice      (qvk.device,   NULL);
+#ifndef __ANDROID_NDK__
   QVK(qvkDestroyDebugUtilsMessengerEXT(qvk.instance, qvk.dbg_messenger, NULL));
+#endif
   vkDestroyInstance    (qvk.instance, NULL);
 
   free(qvk.extensions);
