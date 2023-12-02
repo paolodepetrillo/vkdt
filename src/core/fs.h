@@ -186,6 +186,7 @@ fs_basedir(
   snprintf(mod, sizeof(mod), "%s/darkroom.ui", basedir);
   if(access(mod, F_OK))
   { // no darkroom.ui file and probably also lacking the rest. try dlopen/dso path:
+#ifndef __ANDROID_NDK__ // no dlinfo on Android
     void *handle = dlopen("libvkdt.so", RTLD_LAZY);
     if(handle)
     {
@@ -194,6 +195,7 @@ fs_basedir(
       if(r >= maxlen) { basedir[0] = 0; return; } // got truncated
       dlclose(handle);
     }
+#endif
   }
 #elif defined(__FreeBSD__)
   int mib_procpath[] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
