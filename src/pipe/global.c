@@ -395,7 +395,9 @@ int dt_pipe_global_init()
   memset(&dt_pipe, 0, sizeof(dt_pipe));
   (void)setlocale(LC_ALL, "C"); // make sure we write and parse floats correctly
   // setup search directory
-  fs_basedir(dt_pipe.basedir, sizeof(dt_pipe.basedir));
+  if(dt_pipe.basedir[0] == 0)
+    // find basedir if it has not already been set externally
+    fs_basedir(dt_pipe.basedir, sizeof(dt_pipe.basedir));
   fs_homedir(dt_pipe.homedir, sizeof(dt_pipe.homedir));
   char mod[PATH_MAX+20];
   snprintf(mod, sizeof(mod), "%s/modules", dt_pipe.basedir);
