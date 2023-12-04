@@ -20,7 +20,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "qvk.h"
 #include "core/log.h"
 
+#ifdef __ANDROID_NDK__
+#define VOLK_IMPLEMENTATION
+#include "volk.h"
+#else
 #include <vulkan/vulkan.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -263,6 +268,9 @@ out:;
 VkResult
 qvk_init(const char *preferred_device_name, int preferred_device_id)
 {
+#ifdef __ANDROID_NDK__
+  volkInitialize();
+#endif
   threads_mutex_init(&qvk.queue_mutex, 0);
   threads_mutex_init(&qvk.queue_work0_mutex, 0);
   threads_mutex_init(&qvk.queue_work1_mutex, 0);
@@ -298,6 +306,9 @@ qvk_init(const char *preferred_device_name, int preferred_device_id)
         dt_log(s_log_qvk|s_log_err, "did you install the vulkan validation layer package?");
       return res;
     }
+  #ifdef __ANDROID_NDK__
+    volkLoadInstance(qvk.instance);
+  #endif
   }
 
 #ifndef __ANDROID_NDK__
@@ -500,6 +511,9 @@ qvk_init(const char *preferred_device_name, int preferred_device_id)
 
   /* create device and queue */
   QVKR(vkCreateDevice(qvk.physical_device, &dev_create_info, NULL, &qvk.device));
+#ifdef __ANDROID_NDK__
+  volkLoadDevice(qvk.device);
+#endif
 
   vkGetDeviceQueue(qvk.device, qvk.queue_idx_graphics, 0, &qvk.queue_graphics);
   vkGetDeviceQueue(qvk.device, qvk.queue_idx_compute,  0, &qvk.queue_compute);

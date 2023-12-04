@@ -21,7 +21,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "core/threads.h"
 #include "qvk_util.h"
 
+#ifdef __ANDROID_NDK__
+#include "volk.h"
+#else
 #include <vulkan/vulkan.h>
+#endif
 
 
 #define LENGTH(a) ((sizeof (a)) / (sizeof(*(a))))
