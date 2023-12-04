@@ -22,9 +22,12 @@ typedef enum dt_log_mask_t
 }
 dt_log_mask_t;
 
+typedef void (*dt_log_handler_t)(dt_log_mask_t mask, const char *fmt, va_list ap);
+
 typedef struct dt_log_t
 {
   dt_log_mask_t mask;
+  dt_log_handler_t handler;
 }
 dt_log_t;
 
@@ -127,7 +130,10 @@ dt_log(
     snprintf(str, sizeof(str), "%s %s\n", pre[index], format);
     va_list args;
     va_start(args, format);
-    vfprintf(stdout, str, args);
+    if (dt_log_global.handler)
+      dt_log_global.handler(mask, str, args);
+    else
+      vfprintf(stdout, str, args);
     va_end(args);
   }
 }
