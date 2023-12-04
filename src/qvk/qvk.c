@@ -20,7 +20,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "qvk.h"
 #include "core/log.h"
 
+#ifdef __ANDROID_NDK__
+#define VOLK_IMPLEMENTATION
+#include "volk.h"
+#else
 #include <vulkan/vulkan.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,6 +147,10 @@ qvkDestroyDebugUtilsMessengerEXT(
 VkResult
 qvk_init(const char *preferred_device_name, int preferred_device_id, int window)
 {
+#ifdef __ANDROID_NDK__
+  volkInitialize();
+#endif
+
   get_vk_layer_list(&qvk.num_layers, &qvk.layers);
 
   /* instance extensions */
@@ -176,6 +185,9 @@ qvk_init(const char *preferred_device_name, int preferred_device_id, int window)
         dt_log(s_log_qvk|s_log_err, "did you install the vulkan validation layer package?");
       return res;
     }
+  #ifdef __ANDROID_NDK__
+    volkLoadInstance(qvk.instance);
+  #endif
   }
 
   /* setup debug callback */
@@ -397,6 +409,9 @@ qvk_init(const char *preferred_device_name, int preferred_device_id, int window)
 
   /* create device and queue */
   QVKR(vkCreateDevice(qvk.physical_device, &dev_create_info, NULL, &qvk.device));
+#ifdef __ANDROID_NDK__
+  volkLoadDevice(qvk.device);
+#endif
 
   for(int k=0;k<s_queue_cnt;k++)
   {
