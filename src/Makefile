@@ -74,7 +74,11 @@ CFLAGS?=-Wall -pipe -I. -D_GNU_SOURCE -std=c11
 CXXFLAGS?=-Wall -pipe -I. -D_GNU_SOURCE -std=c++17
 EXE_CFLAGS?=-fPIC
 # LDFLAGS=
+ifneq ($(TARGET),aarch64-linux-android)
 VK_CFLAGS:=$(VKDT_VULKAN_CFLAGS)
+else
+VK_CFLAGS:=$(VKDT_VULKAN_CFLAGS) -I../ext/volk -DVK_NO_PROTOTYPES
+endif
 
 qvk/%.o: qvk/%.c Makefile $(QVK_H) qvk/flat.mk
 	$(CC) $(CFLAGS) $(EXE_CFLAGS) $(OPT_CFLAGS) $(VK_CFLAGS) $(QVK_CFLAGS) -c $< -o $@
