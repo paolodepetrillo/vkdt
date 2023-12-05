@@ -95,8 +95,7 @@ dt_graph_init(dt_graph_t *g)
   // grab default queue:
   g->queue = qvk.queue_compute;
   g->queue_idx = qvk.queue_idx_compute;
-  if(g->queue == qvk.queue_graphics)
-    g->queue_mutex = &qvk.queue_mutex;
+  g->queue_mutex = &qvk.queue_mutex;
 
   g->lod_scale = 1;
   g->active_module = -1;
@@ -392,7 +391,7 @@ allocate_image_array_element(
     .initialLayout         = VK_IMAGE_LAYOUT_UNDEFINED,
   };
   uint32_t wd = MAX(1, c->roi.wd), ht = MAX(1, c->roi.ht);
-  // fprintf(stderr, "DEBUG allocating roi %"PRItkn":%"PRItkn":%"PRItkn":%"PRItkn" %d x %d\n", dt_token_str(node->name), dt_token_str(node->module->inst), dt_token_str(node->kernel), dt_token_str(c->name), wd, ht);
+  // fprintf(stderr, "DEBUG allocating imag %"PRItkn":%"PRItkn":%"PRItkn":%"PRItkn" %d x %d\n", dt_token_str(node->name), dt_token_str(node->module->inst), dt_token_str(node->kernel), dt_token_str(c->name), wd, ht);
   if(c->array_dim)
   { // array with varying size images?
     wd = MAX(1, c->array_dim[2*k+0]);
@@ -819,6 +818,7 @@ alloc_outputs(dt_graph_t *graph, dt_node_t *node)
         qvkDebugMarkerSetObjectNameEXT(qvk.device, &name_info);
 #endif
 #endif
+        // fprintf(stderr, "DEBUG allocating ssbo %"PRItkn":%"PRItkn":%"PRItkn":%"PRItkn" %zu = %d x %d\n", dt_token_str(node->name), dt_token_str(node->module->inst), dt_token_str(node->kernel), dt_token_str(c->name), size, c->roi.wd, c->roi.ht);
         VkMemoryRequirements buf_mem_req;
 
         if(c->type == dt_token("source"))
@@ -2724,8 +2724,15 @@ VkResult dt_graph_run(
     dt_log(s_log_perf, "create raytrace accel:\t%8.3f ms", 1000.0*(rt_end-rt_beg));
     rt_beg = rt_end;
     for(int i=0;i<cnt;i++)
-      QVKR(record_command_buffer(graph, graph->node+nodeid[i], run_all ||
-          (graph->node[nodeid[i]].module->flags & s_module_request_read_source)));
+    {
+      VkResult res = record_command_buffer(graph, graph->node+nodeid[i], run_all ||
+          (graph->node[nodeid[i]].module->flags & s_module_request_read_source));
+      if(res != VK_SUCCESS)
+      { // need to clean up command buffer before we quit
+        QVKR(vkEndCommandBuffer(graph->command_buffer[f]));
+        return res;
+      }
+    }
     rt_end = dt_time();
     dt_log(s_log_perf, "record command buffer:\t%8.3f ms", 1000.0*(rt_end-rt_beg));
     QVKR(vkEndCommandBuffer(graph->command_buffer[f]));
@@ -2854,8 +2861,9 @@ VkResult dt_graph_run(
       dt_log(s_log_perf, "total time:\t%8.3f ms", graph->query[q].last_frame_duration);
     }
   }
-  // reset run flags:
+  // reset run flags and gui error message
   graph->runflags = 0;
+  graph->gui_msg = 0;
   return VK_SUCCESS;
 }
 
@@ -2894,7 +2902,7 @@ dt_graph_connector_image(
     cid2 = graph->node[nid].connector[cid].connected_mc;
     nid2 = graph->node[nid].connector[cid].connected_mi;
   }
-  frame %= graph->node[nid2].connector[cid2].frames;
+  frame %= MAX(1, graph->node[nid2].connector[cid2].frames);
   return graph->conn_image_pool +
     graph->node[nid].conn_image[cid] + MAX(1,graph->node[nid].connector[cid].array_length) * frame + array;
 }
