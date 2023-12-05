@@ -150,6 +150,11 @@ MOD_GLOBAL_DEPS=\
   pipe/connector.c\
   pipe/connector.inc
 MOD_GLOBAL_CFLAGS=-Ipipe -I. -fPIC
+ifeq ($(TARGET),aarch64-linux-android)
+  # https://github.com/android/ndk/issues/201
+  MOD_GLOBAL_DEPS+=../bin/libvkdt.so
+  MOD_GLOBAL_CFLAGS+=-L../bin -lvkdt
+endif
 
 # expand all cflags/ldflags/deps/extra-c from flat.mk:
 $(foreach MOD,$(FLATMK),\
