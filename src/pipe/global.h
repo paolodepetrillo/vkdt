@@ -132,6 +132,7 @@ extern dt_pipe_global_t dt_pipe;
 
 // returns non-zero on failure:
 int dt_pipe_global_init();
+int dt_pipe_global_init_basedir(const char *basedir);
 
 // global cleanup:
 void dt_pipe_global_cleanup();
