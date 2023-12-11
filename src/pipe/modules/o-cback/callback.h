@@ -1,6 +1,6 @@
 #pragma once
 
-#include "token.h"
+#include "pipe/token.h"
 
 #include <stdint.h>
 
