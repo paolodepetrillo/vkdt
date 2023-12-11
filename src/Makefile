@@ -67,18 +67,11 @@ clean: Makefile
 	rm -rf ../ext/libjpeg-turbo-build
 
 # GNU_SOURCE for sched_affinity
-CFLAGS=-Wall -pipe -I. -D_GNU_SOURCE -std=c11
-ifneq ($(TARGET),aarch64-linux-android)
-  CFLAGS+=-DVK_ENABLE_BETA_EXTENSIONS
-endif
-CXXFLAGS=-Wall -pipe -I. -D_GNU_SOURCE
+CFLAGS?=-Wall -pipe -I. -D_GNU_SOURCE -std=c11 -DVK_ENABLE_BETA_EXTENSIONS
+CXXFLAGS?=-Wall -pipe -I. -D_GNU_SOURCE
 EXE_CFLAGS?=-fPIC
-LDFLAGS=
-ifneq ($(TARGET),aarch64-linux-android)
+# LDFLAGS=
 VK_CFLAGS:=$(VKDT_VULKAN_CFLAGS)
-else
-VK_CFLAGS:=$(VKDT_VULKAN_CFLAGS) -I../ext/volk -DVK_NO_PROTOTYPES
-endif
 
 qvk/%.o: qvk/%.c Makefile $(QVK_H) qvk/flat.mk
 	$(CC) $(CFLAGS) $(EXE_CFLAGS) $(OPT_CFLAGS) $(VK_CFLAGS) $(QVK_CFLAGS) -c $< -o $@

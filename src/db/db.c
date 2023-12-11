@@ -5,7 +5,9 @@
 #include "pipe/graph-defaults.h"
 #include "stringpool.h"
 #include "exif.h"
+#ifdef __ANDROID_NDK__
 #include "sort_r.h"
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -28,6 +30,7 @@ dt_db_init(dt_db_t *db)
   fs_mkdir(db->basedir, 0755);
   // probably read preferences here from config file instead:
   db->collection_sort = s_prop_filename;
+  threads_mutex_init(&db->image_mutex, 0);
 }
 
 void
@@ -41,7 +44,42 @@ dt_db_cleanup(dt_db_t *db)
   free(db->collection);
   free(db->selection);
   free(db->image);
+  threads_mutex_destroy(&db->image_mutex);
   memset(db, 0, sizeof(*db));
+}
+
+// portable sort. another 76 loc thoroughly wasted:
+typedef int sort_compare_t(const void *, const void *, void *);
+typedef struct sort_wrapper_t
+{
+  sort_compare_t *f;
+  void           *d;
+}
+sort_wrapper_t;
+#if defined(__APPLE__) || defined(_WIN64)
+static int sort_wrap_compare(void *w, const void *a, const void *b)
+{
+  sort_wrapper_t *wrap = w;
+  return (*wrap->f)(a, b, wrap->d);
+}
+#endif
+void sort(void *base, size_t nmemb, size_t size, sort_compare_t *compare, void *data)
+{
+#if defined(__APPLE__) || defined(_WIN64)
+  sort_wrapper_t w = {.f = compare, .d = data};
+#endif
+
+#if defined(__APPLE__)
+  qsort_r(base, nmemb, size, &w, sort_wrap_compare);
+#elif defined(_WIN64)
+  qsort_s(base, nmemb, size, sort_wrap_compare, &w);
+#elif defined(__ANDROID_NDK__)
+  sort_r(base, nmemb, size, compare, data);
+#elif defined(__linux__) && defined(_GNU_SOURCE)
+  qsort_r(base, nmemb, size, compare, data);
+#else
+  #error "TODO: implement qsort fallback!"
+#endif
 }
 
 static int
@@ -162,19 +200,19 @@ dt_db_update_collection(dt_db_t *db)
   case s_prop_none:
     break;
   case s_prop_filename:
-    sort_r(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_filename, db);
+    sort(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_filename, db);
     break;
   case s_prop_rating:
-    sort_r(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_rating, db);
+    sort(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_rating, db);
     break;
   case s_prop_labels:
-    sort_r(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_labels, db);
+    sort(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_labels, db);
     break;
   case s_prop_createdate:
-    sort_r(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_createdate, db);
+    sort(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_createdate, db);
     break;
   case s_prop_filetype:
-    sort_r(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_filetype, db);
+    sort(db->collection, db->collection_cnt, sizeof(db->collection[0]), compare_filetype, db);
     break;
   }
 }
@@ -419,19 +457,19 @@ const uint32_t *dt_db_selection_get(dt_db_t *db)
   case s_prop_none:
     break;
   case s_prop_filename:
-    sort_r(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_filename, db);
+    sort(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_filename, db);
     break;
   case s_prop_rating:
-    sort_r(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_rating, db);
+    sort(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_rating, db);
     break;
   case s_prop_labels:
-    sort_r(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_labels, db);
+    sort(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_labels, db);
     break;
   case s_prop_createdate:
-    sort_r(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_createdate, db);
+    sort(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_createdate, db);
     break;
   case s_prop_filetype:
-    sort_r(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_filetype, db);
+    sort(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_filetype, db);
     break;
   }
   return db->selection;
@@ -549,7 +587,7 @@ void dt_db_remove_selected_images(
     const int del)
 {
   // sort selection array by id:
-  sort_r(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_id, db);
+  sort(db->selection, db->selection_cnt, sizeof(db->selection[0]), compare_id, db);
 
   // go through sorted list of imgid, largest id first:
   char fullfn[2048] = {0};

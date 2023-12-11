@@ -1,4 +1,5 @@
 #pragma once
+#include "strexpand.h"
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <dirent.h>
@@ -7,6 +8,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #ifndef _WIN64
 #include <sys/sendfile.h>
 #endif
@@ -19,7 +21,8 @@ fs_copy(
 {
 #ifdef _WIN64
 #warning "port me!"
-  return 1;
+  bool res = CopyFile(src, dst, false);
+  return res != 0;
 #else
   ssize_t ret;
   struct stat sb;
@@ -234,5 +237,81 @@ fs_symlink(const char *target, const char *linkpath)
   return 0;
 #else
   return symlink(target, linkpath);
+#endif
+}
+
+static inline void
+fs_expand_import_filename(
+    const char *pattern, size_t pattern_size, // input pattern with ${home} ${date} ${yyyy} ${dest}
+    char       *dst,     size_t dst_size,     // return expanded string here
+    const char *dest)                         // ${dest} replacement string
+{
+  char date[10] = {0}, yyyy[5] = {0};
+#ifdef _WIN64
+#warning "port me!"
+#else
+  time_t t = time(0);
+  struct tm *tm = localtime(&t);
+  strftime(date, sizeof(date), "%Y%m%d", tm);
+  strftime(yyyy, sizeof(yyyy), "%Y", tm);
+#endif
+  const char *key[] = { "home", "yyyy", "date", "dest", 0};
+  const char *val[] = { getenv("HOME"), yyyy, date, dest, 0};
+  dt_strexpand(pattern, pattern_size, dst, dst_size, key, val);
+}
+
+static inline void
+fs_expand_export_filename(
+    const char *pattern, size_t pattern_size, // input pattern with ${home} ${yyyy} ${date} ${seq} ${fdir} ${fbase}
+    char       *dst,     size_t dst_size,     // return expanded string here
+    char       *filename,                     // source image filename
+    int         seq)                          // sequence number for ${seq}
+{
+  char *filebase = fs_basename(filename);
+  size_t len = strlen(filebase);
+  if(len > 4) filebase[len-4] = 0; // cut away .cfg
+  if(len > 8 && filebase[len-8] == '.') filebase[len-8] = 0; // cut .xxx
+  if(len > 9 && filebase[len-9] == '.') filebase[len-9] = 0; // cut .xxxx
+  fs_dirname(filename);
+  char date[10] = {0}, yyyy[5] = {0}, istr[5] = {0};
+#ifdef _WIN64
+#warning "port me!"
+#else
+  time_t t = time(0);
+  struct tm *tm = localtime(&t);
+  strftime(date, sizeof(date), "%Y%m%d", tm);
+  strftime(yyyy, sizeof(yyyy), "%Y", tm);
+#endif
+  snprintf(istr, sizeof(istr), "%04d", seq);
+  const char *key[] = { "home", "yyyy", "date", "seq", "fdir", "fbase", 0};
+  const char *val[] = { getenv("HOME"), yyyy, date, istr, filename, filebase, 0};
+  dt_strexpand(pattern, pattern_size, dst, dst_size, key, val);
+}
+
+static inline void
+fs_createdate(
+    const char *filename,  // filename to stat
+    char       *datetime)  // at least [20]
+{
+#ifdef _WIN64
+#warning "port me!"
+  datetime[0] = 0;
+#else
+  struct stat statbuf;
+  if(!stat(filename, &statbuf))
+  {
+    struct tm result;
+    strftime(datetime, 20, "%Y:%m:%d %H:%M:%S", localtime_r(&statbuf.st_mtime, &result));
+  }
+#endif
+}
+
+static inline int
+fs_link(const char *oldpath, const char *newpath)
+{
+#ifdef _WIN64
+  return fs_copy(newpath, oldpath); // inefficient and stupid, as you would.
+#else
+  return link(oldpath, newpath);
 #endif
 }
