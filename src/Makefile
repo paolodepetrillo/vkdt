@@ -127,7 +127,7 @@ ext/imgui/examples/%.o: ext/imgui/examples/%.cpp Makefile
 # library
 # ======================
 ifeq ($(TARGET),aarch64-linux-android)
-  LIBVKDT_LDFLAGS=-Wl,-z,global
+  LIBVKDT_LDFLAGS=-Wl,-z,global -Wl,--build-id=sha1
 endif
 ../bin/libvkdt.so: $(QVK_O) $(CORE_O) $(PIPE_O) $(DB_O) Makefile
 	$(CC) -shared -nostartfiles -Wl,-soname,libvkdt.so $(LIBVKDT_LDFLAGS) -o $@ $(QVK_O) $(CORE_O) $(PIPE_O) $(DB_O)
