@@ -612,6 +612,17 @@ qvk_init(const char *preferred_device_name, int preferred_device_id)
   // initialise a safe fallback for cli mode ("dspy" format is going to look here):
   qvk.surf_format.format = VK_FORMAT_R8G8B8A8_UNORM;
 
+#ifdef VKDT_USE_PIPELINE_CACHE
+  VkPipelineCacheCreateInfo cache_info = {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0,
+    .initialDataSize = 0,
+    .pInitialData = NULL
+  };
+  QVKR(vkCreatePipelineCache(qvk.device, &cache_info, NULL, &qvk.pipeline_cache));
+#endif
+
   return VK_SUCCESS;
 }
 

@@ -736,7 +736,7 @@ alloc_outputs(dt_graph_t *graph, dt_node_t *node)
         .basePipelineIndex   = -1,
       };
 
-      QVKR(vkCreateGraphicsPipelines(qvk.device, VK_NULL_HANDLE,
+      QVKR(vkCreateGraphicsPipelines(qvk.device, qvk.pipeline_cache,
             1, &pipeline_info, NULL, &node->pipeline));
 
       // TODO: keep cached for others
@@ -769,7 +769,7 @@ alloc_outputs(dt_graph_t *graph, dt_node_t *node)
         .stage  = stage_info,
         .layout = node->pipeline_layout
       };
-      QVKR(vkCreateComputePipelines(qvk.device, VK_NULL_HANDLE, 1, &pipeline_info, 0, &node->pipeline));
+      QVKR(vkCreateComputePipelines(qvk.device, qvk.pipeline_cache, 1, &pipeline_info, 0, &node->pipeline));
 
       // we don't need the module any more
       vkDestroyShaderModule(qvk.device, stage_info.module, 0);
