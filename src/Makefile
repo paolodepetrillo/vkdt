@@ -53,7 +53,6 @@ include gui/flat.mk
 include cli/flat.mk
 include fit/flat.mk
 include tools/flat.mk
-include ../ext/flat.mk
 
 clean: Makefile
 	rm -f ../bin/vkdt ../bin/vkdt-cli ../bin/vkdt-fit

@@ -1,9 +1,6 @@
 [submodule "ext/imgui"]
 	path = ext/imgui
 	url = https://github.com/hanatos/imgui.git
-[submodule "ext/libjpeg-turbo"]
-	path = ext/libjpeg-turbo
-	url = https://github.com/libjpeg-turbo/libjpeg-turbo
 [submodule "ext/volk"]
 	path = ext/volk
 	url = https://github.com/zeux/volk
