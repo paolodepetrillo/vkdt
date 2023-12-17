@@ -63,7 +63,6 @@ clean: Makefile
 	rm -f pipe/modules/*/lib*.so
 	rm -f pipe/modules/*/*.spv
 	rm -f pipe/modules/*/{ctooltips,ptooltips}
-	rm -rf ../ext/libjpeg-turbo-build
 
 # GNU_SOURCE for sched_affinity
 CFLAGS?=-Wall -pipe -I. -D_GNU_SOURCE -std=c11 -DVK_ENABLE_BETA_EXTENSIONS
