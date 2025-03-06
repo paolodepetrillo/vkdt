@@ -53,7 +53,7 @@ else
   RUST_TARGET_PARAM=
   RUST_TARGET_DIR=target
 endif
-MOD_LDFLAGS=pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a
+MOD_LDFLAGS=pipe/modules/i-raw/rawloader-c/$(RUST_TARGET_DIR)/release/librawloader.a -lm
 ifeq ($(OS),Windows_NT)
 MOD_LDFLAGS+=-lws2_32 -lntdll -lbcrypt -lkernel32 -ladvapi32
 endif
