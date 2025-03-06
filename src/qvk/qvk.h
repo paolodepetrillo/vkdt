@@ -131,6 +131,7 @@ typedef struct qvk_t
   int                         raytracing_supported;
   int                         float_atomics_supported;
   int                         coopmat_supported;
+  int                         debug_utils_supported;
 
   VkPipelineCache             pipeline_cache;
 }
