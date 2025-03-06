@@ -542,6 +542,17 @@ qvk_init(const char *preferred_device_name, int preferred_device_id, int window)
   };
   QVKR(vkCreateSampler(qvk.device, &sampler_yuv_info, NULL, &qvk.tex_sampler_yuv));
 
+#ifdef VKDT_USE_PIPELINE_CACHE
+  VkPipelineCacheCreateInfo cache_info = {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0,
+    .initialDataSize = 0,
+    .pInitialData = NULL
+  };
+  QVKR(vkCreatePipelineCache(qvk.device, &cache_info, NULL, &qvk.pipeline_cache));
+#endif
+
   return VK_SUCCESS;
 }
 
