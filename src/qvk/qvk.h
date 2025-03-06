@@ -133,6 +133,7 @@ typedef struct qvk_t
   int                         float_atomics_supported;
   int                         coopmat_supported;
   int                         blit_supported;
+  int                         debug_utils_supported;
 
   VkPipelineCache             pipeline_cache;
 }
