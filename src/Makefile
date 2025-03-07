@@ -145,7 +145,11 @@ MOD_GLOBAL_DEPS=\
   pipe/connector.h\
   pipe/connector.c\
   pipe/connector.inc
+ifneq ($(TARGET),aarch64-linux-android)
 MOD_GLOBAL_CFLAGS=-Ipipe -I. -fPIC -DVKDT_DSO_BUILD
+else
+MOD_GLOBAL_CFLAGS=-Ipipe -I. -fPIC
+endif
 MOD_GLOBAL_LDFLAGS=-ldl
 
 # expand all cflags/ldflags/deps/extra-c from flat.mk:
