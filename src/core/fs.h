@@ -187,7 +187,6 @@ fs_basedir(
 #ifdef __GLIBC__
   if(access(mod, F_OK))
   { // no darkroom.ui file and probably also lacking the rest. try dlopen/dso path:
-#ifndef __ANDROID_NDK__ // no dlinfo on Android
     void *handle = dlopen("libvkdt.so", RTLD_LAZY);
     if(handle)
     {
@@ -196,7 +195,6 @@ fs_basedir(
       if(r >= maxlen) { basedir[0] = 0; return; } // got truncated
       dlclose(handle);
     }
-#endif
   }
 #endif
 #elif defined(__FreeBSD__)
