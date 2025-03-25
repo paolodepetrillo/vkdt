@@ -59,6 +59,11 @@ void write_sink(
   free(out);
   // atomically create filename only when we're quite done writing:
   unlink(filename); // just to be sure the link will work
+#ifdef __ANDROID_NDK__
+  // link is not allowed on Android
+  rename(tmpfile, filename);
+#else
   fs_link(tmpfile, filename);
   unlink(tmpfile);
+#endif
 }
