@@ -55,6 +55,7 @@ const char *vk_requested_instance_extensions[] = {
   // colour management:
   // VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME,
   // debugging:
+  VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
   VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 #ifdef __APPLE__
   VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
@@ -154,20 +155,11 @@ qvk_init(const char *preferred_device_name, int preferred_device_id, int window)
 
   /* instance extensions */
   int num_inst_ext_combined = qvk.num_glfw_extensions + LENGTH(vk_requested_instance_extensions);
-  char **ext = alloca(sizeof(char *) * (num_inst_ext_combined + 1));
-  int iext = 0;
-  memcpy(&ext[iext], qvk.glfw_extensions, qvk.num_glfw_extensions * sizeof(*qvk.glfw_extensions));
-  iext += qvk.num_glfw_extensions;
-  memcpy(&ext[iext], vk_requested_instance_extensions, sizeof(vk_requested_instance_extensions));
-  iext += LENGTH(vk_requested_instance_extensions);
+  char **ext = alloca(sizeof(char *) * num_inst_ext_combined);
+  memcpy(ext, qvk.glfw_extensions, qvk.num_glfw_extensions * sizeof(*qvk.glfw_extensions));
+  memcpy(ext + qvk.num_glfw_extensions, vk_requested_instance_extensions, sizeof(vk_requested_instance_extensions));
 
   get_vk_extension_list(NULL, &qvk.num_extensions, &qvk.extensions);
-  for(int k=0;k<qvk.num_extensions;k++)
-  {
-    if (!strcmp(qvk.extensions[k].extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
-      qvk.debug_utils_supported = 1;
-  }
-  if(qvk.debug_utils_supported) ext[iext++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
 
   /* create instance */
   VkInstanceCreateInfo inst_create_info = {
@@ -177,7 +169,7 @@ qvk_init(const char *preferred_device_name, int preferred_device_id, int window)
     .enabledLayerCount       = LENGTH(vk_requested_layers),
     .ppEnabledLayerNames     = vk_requested_layers,
 #endif
-    .enabledExtensionCount   = iext,
+    .enabledExtensionCount   = num_inst_ext_combined,
     .ppEnabledExtensionNames = (const char * const*)ext,
 #ifdef __APPLE__
     .flags                   = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
@@ -198,26 +190,22 @@ qvk_init(const char *preferred_device_name, int preferred_device_id, int window)
   #endif
   }
 
-  if(qvk.debug_utils_supported)
-  {
-    /* setup debug callback */
-    VkDebugUtilsMessengerCreateInfoEXT dbg_create_info = {
-      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-      .messageSeverity =
-          VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-      .messageType =
-          VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
-        | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-      .pfnUserCallback = vk_debug_callback,
-      .pUserData = NULL
-    };
+  /* setup debug callback */
+  VkDebugUtilsMessengerCreateInfoEXT dbg_create_info = {
+    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+    .messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+      | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+      | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+    .messageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+      | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+      | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+    .pfnUserCallback = vk_debug_callback,
+    .pUserData = NULL
+  };
 
-    QVKR(qvkCreateDebugUtilsMessengerEXT(qvk.instance, &dbg_create_info, NULL, &qvk.dbg_messenger));
-  }
-
+  QVKR(qvkCreateDebugUtilsMessengerEXT(qvk.instance, &dbg_create_info, NULL, &qvk.dbg_messenger));
 
   /* pick physical device (iterate over all but pick device 0 anyways) */
   uint32_t num_devices = 0;
@@ -586,8 +574,7 @@ qvk_cleanup()
   vkDestroySamplerYcbcrConversion(qvk.device, qvk.yuv_conversion, 0);
 
   vkDestroyDevice      (qvk.device,   NULL);
-  if(qvk.debug_utils_supported)
-    QVK(qvkDestroyDebugUtilsMessengerEXT(qvk.instance, qvk.dbg_messenger, NULL));
+  QVK(qvkDestroyDebugUtilsMessengerEXT(qvk.instance, qvk.dbg_messenger, NULL));
   vkDestroyInstance    (qvk.instance, NULL);
 
   free(qvk.extensions);
